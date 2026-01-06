@@ -1,22 +1,18 @@
+use serde::Serialize;
 use std::{fmt, io::Read};
 
-// #[derive(Debug)]
-struct Input {
-    txid: [u8; 32],
-    output_index: u64, // TODO: change to u64
-    script_sig: Vec<u8>,
-    sequence: u64, // TODO: change to u64
+#[derive(Debug, Serialize)]
+struct Transaction {
+    version: u64,
+    inputs: Vec<Input>,
 }
 
-impl fmt::Debug for Input {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Input")
-            .field("txid", &self.txid)
-            .field("output_index", &self.output_index)
-            .field("script_sig", &self.script_sig)
-            .field("sequence", &self.sequence)
-            .finish()
-    }
+#[derive(Debug, Serialize)]
+struct Input {
+    txid: String,
+    output_index: u64, // TODO: change to u64
+    script_sig: String,
+    sequence: u64, // TODO: change to u64
 }
 
 fn read_nb_bytes(nb_bytes: usize, bytes: &mut &[u8]) -> u64 {
@@ -71,17 +67,14 @@ fn main() {
     let mut bytes_slice = transaction_bytes.as_slice();
 
     let version = read_nb_bytes(4, &mut bytes_slice);
-    println!("version is {version}");
-
     let input_count = read_compact_size(&mut bytes_slice);
-    println!("#of inputes = {input_count}");
 
     let mut inputs = vec![];
 
     for _ in 0..input_count {
-        let txid = read_txid(&mut bytes_slice);
+        let txid = hex::encode(read_txid(&mut bytes_slice));
         let output_index = read_nb_bytes(4, &mut bytes_slice);
-        let script_sig = read_script(&mut bytes_slice);
+        let script_sig = hex::encode(read_script(&mut bytes_slice));
         let sequence = read_nb_bytes(4, &mut bytes_slice);
 
         inputs.push(Input {
@@ -91,8 +84,12 @@ fn main() {
             sequence,
         });
     }
+    let transaction = Transaction { version, inputs };
 
-    println!("Inputs: {:?}", inputs);
+    println!(
+        "Transaction: {}",
+        serde_json::to_string_pretty(&transaction).unwrap()
+    );
 }
 
 #[cfg(test)]
