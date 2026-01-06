@@ -5,6 +5,7 @@ use std::{fmt, io::Read};
 struct Transaction {
     version: u64,
     inputs: Vec<Input>,
+    outputs: Vec<Output>,
 }
 
 #[derive(Debug, Serialize)]
@@ -13,6 +14,12 @@ struct Input {
     output_index: u64, // TODO: change to u64
     script_sig: String,
     sequence: u64, // TODO: change to u64
+}
+
+#[derive(Debug, Serialize)]
+struct Output {
+    amount: u64,
+    script_pubkey: String,
 }
 
 fn read_nb_bytes(nb_bytes: usize, bytes: &mut &[u8]) -> u64 {
@@ -84,7 +91,22 @@ fn main() {
             sequence,
         });
     }
-    let transaction = Transaction { version, inputs };
+    let output_count = read_compact_size(&mut bytes_slice);
+    let mut outputs = vec![];
+
+    for _ in 0..output_count {
+        let amount = read_nb_bytes(8, &mut bytes_slice) / 100_000_000.;
+        let script_pubkey = hex::encode(read_script(&mut bytes_slice));
+        outputs.push(Output {
+            amount,
+            script_pubkey,
+        })
+    }
+    let transaction = Transaction {
+        version,
+        inputs,
+        outputs,
+    };
 
     println!(
         "Transaction: {}",

@@ -11,6 +11,7 @@
 **Libraries / implementations**
 - BDK (Bitcoin Dev Kit)  
   https://github.com/bitcoindevkit/bdk
+- https://github.com/rust-bitcoin/rust-bitcoin
 
 ---
 
