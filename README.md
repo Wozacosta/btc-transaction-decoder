@@ -33,6 +33,18 @@ These links are useful to inspect decoded fields side-by-side with raw hex:
 - Each **2 hex characters = 1 byte** in the serialized transaction.
 
 ---
+## Locktime
+
+https://learnmeabitcoin.com/technical/transaction/locktime/#:~:text=The%20locktime%20field%20allows%20you,on%20the%20transaction%20has%20passed
+
+---
+
+## Transaction ID
+
+https://learnmeabitcoin.com/technical/cryptography/hash-function/#hash256
+https://learnmeabitcoin.com/technical/transaction/input/txid/
+
+---
 
 ## Endianness Notes (Critical)
 

@@ -1,15 +1,12 @@
+use sha2::{Digest, Sha256};
 use std::io::Read;
 
-use crate::transaction::{Amount, Input, Output, Transaction};
+use crate::transaction::{Amount, Input, Output, Transaction, Txid};
 mod transaction;
 
 fn read_nb_bytes(nb_bytes: usize, bytes: &mut &[u8]) -> u64 {
     let mut buffer = vec![0; nb_bytes];
-    // let mut buffer = [0; nb_bytes];
     bytes.read(&mut buffer).unwrap();
-    dbg!("HERE");
-    println!("nb_bytes = {nb_bytes}, bytes = {:?}", bytes);
-    println!("buffer here = {:?}", buffer);
     match nb_bytes {
         1 => buffer[0] as u64,
         2 => u16::from_le_bytes(buffer.try_into().unwrap()) as u64,
@@ -24,8 +21,6 @@ fn read_compact_size(mut transaction_bytes: &mut &[u8]) -> u64 {
     let mut compact_size = [0];
     transaction_bytes.read(&mut compact_size).unwrap();
 
-    println!("now, transaction bytes = {:?}", transaction_bytes);
-
     match compact_size[0] {
         0..253 => compact_size[0] as u64,
         253 => read_nb_bytes(2, &mut transaction_bytes),
@@ -34,12 +29,11 @@ fn read_compact_size(mut transaction_bytes: &mut &[u8]) -> u64 {
     }
 }
 
-fn read_txid(transaction_bytes: &mut &[u8]) -> [u8; 32] {
+fn read_txid(transaction_bytes: &mut &[u8]) -> Txid {
     let mut buffer = [0; 32];
 
     transaction_bytes.read(&mut buffer).unwrap();
-    buffer.reverse();
-    buffer
+    Txid::from_bytes(buffer)
 }
 
 fn read_script(mut transaction_bytes: &mut &[u8]) -> Vec<u8> {
@@ -47,6 +41,18 @@ fn read_script(mut transaction_bytes: &mut &[u8]) -> Vec<u8> {
     let mut buffer = vec![0_u8; script_size];
     transaction_bytes.read(&mut buffer).unwrap();
     buffer
+}
+
+fn hash_raw_transaction(raw_transaction: &[u8]) -> Txid {
+    let mut hasher = Sha256::new();
+    hasher.update(&raw_transaction);
+    let hash1 = hasher.finalize();
+
+    let mut hasher = Sha256::new();
+    hasher.update(hash1);
+    let hash2 = hasher.finalize();
+
+    Txid::from_bytes(hash2.into())
 }
 
 fn main() {
@@ -60,7 +66,7 @@ fn main() {
     let mut inputs = vec![];
 
     for _ in 0..input_count {
-        let txid = hex::encode(read_txid(&mut bytes_slice));
+        let txid = read_txid(&mut bytes_slice);
         let output_index = read_nb_bytes(4, &mut bytes_slice);
         let script_sig = hex::encode(read_script(&mut bytes_slice));
         let sequence = read_nb_bytes(4, &mut bytes_slice);
@@ -83,7 +89,13 @@ fn main() {
             script_pubkey,
         })
     }
+
+    let lock_time = read_nb_bytes(4, &mut bytes_slice);
+    let transaction_id = hash_raw_transaction(&transaction_bytes);
+
     let transaction = Transaction {
+        transaction_id,
+        lock_time,
         version,
         inputs,
         outputs,
