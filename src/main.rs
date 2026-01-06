@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 use std::{fmt, io::Read};
 
 #[derive(Debug, Serialize)]
@@ -18,8 +18,27 @@ struct Input {
 
 #[derive(Debug, Serialize)]
 struct Output {
-    amount: u64,
+    #[serde(serialize_with = "as_btc")]
+    amount: Amount,
     script_pubkey: String,
+}
+
+fn as_btc<S: Serializer, T: BitcoinValue>(t: &T, s: S) -> Result<S::Ok, S::Error> {
+    let btc = t.to_btc();
+    s.serialize_f64(btc)
+}
+
+#[derive(Debug, Serialize)]
+struct Amount(u64);
+
+trait BitcoinValue {
+    fn to_btc(&self) -> f64;
+}
+
+impl BitcoinValue for Amount {
+    fn to_btc(&self) -> f64 {
+        self.0 as f64 / 100_000_000.0
+    }
 }
 
 fn read_nb_bytes(nb_bytes: usize, bytes: &mut &[u8]) -> u64 {
@@ -95,7 +114,7 @@ fn main() {
     let mut outputs = vec![];
 
     for _ in 0..output_count {
-        let amount = read_nb_bytes(8, &mut bytes_slice) / 100_000_000.;
+        let amount = Amount(read_nb_bytes(8, &mut bytes_slice));
         let script_pubkey = hex::encode(read_script(&mut bytes_slice));
         outputs.push(Output {
             amount,

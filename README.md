@@ -45,6 +45,15 @@ Bitcoin uses **little-endian encoding** for most integer fields.
   - locktime
   - txid (when serialized internally)
 
+---
+
+## Serde
+
+https://serde.rs/field-attrs.html#serialize_with
+https://docs.rs/serde/latest/serde/ser/trait.Serializer.html#tymethod.serialize_f64
+
+---
+
 ### Recommended Reading
 - Bits, bytes, and endianness  
   https://edil.com.br/blog/bits-bytes-and-the-dreaded-little-endian
