@@ -28,7 +28,13 @@ fn as_btc<S: Serializer, T: BitcoinValue>(t: &T, s: S) -> Result<S::Ok, S::Error
 }
 
 #[derive(Debug, Serialize)]
-pub struct Amount(pub u64);
+pub struct Amount(u64);
+
+impl Amount {
+    pub fn from_sat(satoshi: u64) -> Amount {
+        Amount(satoshi)
+    }
+}
 
 trait BitcoinValue {
     fn to_btc(&self) -> f64;

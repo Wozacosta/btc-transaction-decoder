@@ -76,7 +76,7 @@ fn main() {
     let mut outputs = vec![];
 
     for _ in 0..output_count {
-        let amount = Amount(read_nb_bytes(8, &mut bytes_slice));
+        let amount = Amount::from_sat(read_nb_bytes(8, &mut bytes_slice));
         let script_pubkey = hex::encode(read_script(&mut bytes_slice));
         outputs.push(Output {
             amount,
