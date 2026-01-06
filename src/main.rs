@@ -1,45 +1,7 @@
-use serde::{Serialize, Serializer};
-use std::{fmt, io::Read};
+use std::io::Read;
 
-#[derive(Debug, Serialize)]
-struct Transaction {
-    version: u64,
-    inputs: Vec<Input>,
-    outputs: Vec<Output>,
-}
-
-#[derive(Debug, Serialize)]
-struct Input {
-    txid: String,
-    output_index: u64, // TODO: change to u64
-    script_sig: String,
-    sequence: u64, // TODO: change to u64
-}
-
-#[derive(Debug, Serialize)]
-struct Output {
-    #[serde(serialize_with = "as_btc")]
-    amount: Amount,
-    script_pubkey: String,
-}
-
-fn as_btc<S: Serializer, T: BitcoinValue>(t: &T, s: S) -> Result<S::Ok, S::Error> {
-    let btc = t.to_btc();
-    s.serialize_f64(btc)
-}
-
-#[derive(Debug, Serialize)]
-struct Amount(u64);
-
-trait BitcoinValue {
-    fn to_btc(&self) -> f64;
-}
-
-impl BitcoinValue for Amount {
-    fn to_btc(&self) -> f64 {
-        self.0 as f64 / 100_000_000.0
-    }
-}
+use crate::transaction::{Amount, Input, Output, Transaction};
+mod transaction;
 
 fn read_nb_bytes(nb_bytes: usize, bytes: &mut &[u8]) -> u64 {
     let mut buffer = vec![0; nb_bytes];
@@ -72,7 +34,7 @@ fn read_compact_size(mut transaction_bytes: &mut &[u8]) -> u64 {
     }
 }
 
-fn read_txid(mut transaction_bytes: &mut &[u8]) -> [u8; 32] {
+fn read_txid(transaction_bytes: &mut &[u8]) -> [u8; 32] {
     let mut buffer = [0; 32];
 
     transaction_bytes.read(&mut buffer).unwrap();
